@@ -66,7 +66,7 @@ spec:
         fsGroup: 10000
       containers:
         - name: kroki-mcp
-          image: ghcr.io/andyjmorgan/donkeywork/kroki-mcp:latest
+          image: 192.168.0.140:5555/donkeywork/kroki-mcp:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
