@@ -21,7 +21,7 @@ env:
 jobs:
   build:
     name: Build & Push Image
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, k8s]
     env:
       DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
     outputs:

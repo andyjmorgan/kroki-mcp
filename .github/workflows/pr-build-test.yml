@@ -15,7 +15,7 @@ concurrency:
 jobs:
   build-test:
     name: Build & Test
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64, k8s]
     env:
       DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
     steps:
