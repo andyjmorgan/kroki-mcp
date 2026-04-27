@@ -9,5 +9,4 @@
 .github
 deploy
 test-output
-publish
 nuget.config
