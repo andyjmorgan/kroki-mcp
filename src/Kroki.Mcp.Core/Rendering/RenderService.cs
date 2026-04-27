@@ -32,7 +32,7 @@ public sealed class RenderService : IRenderService
         _metrics = metrics;
     }
 
-    public async Task<RenderResult> RenderMermaidAsync(string source, RenderFormat format, CancellationToken ct)
+    public async Task<RenderResult> RenderMermaidAsync(string source, RenderFormat format, MermaidTheme? theme, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(source))
         {
@@ -40,7 +40,9 @@ public sealed class RenderService : IRenderService
             throw new ArgumentException("Mermaid source is empty.", nameof(source));
         }
 
-        var byteCount = System.Text.Encoding.UTF8.GetByteCount(source);
+        var themedSource = ApplyTheme(source, theme);
+
+        var byteCount = System.Text.Encoding.UTF8.GetByteCount(themedSource);
         if (byteCount > _krokiOptions.MaxSourceBytes)
         {
             _metrics.RenderRequests.Add(1, new KeyValuePair<string, object?>("format", format.ToString().ToLowerInvariant()), new KeyValuePair<string, object?>("status", "too_large"));
@@ -62,7 +64,7 @@ public sealed class RenderService : IRenderService
         var stopwatch = Stopwatch.StartNew();
         try
         {
-            var rendered = await _kroki.RenderMermaidAsync(source, format, ct).ConfigureAwait(false);
+            var rendered = await _kroki.RenderMermaidAsync(themedSource, format, ct).ConfigureAwait(false);
 
             var now = _time.GetUtcNow();
             var ttl = TimeSpan.FromDays(_blobOptions.RetentionDays);
@@ -92,5 +94,23 @@ public sealed class RenderService : IRenderService
             _metrics.RenderRequests.Add(1, formatTag, new KeyValuePair<string, object?>("status", "error"));
             throw;
         }
+    }
+
+    // Prepends a Mermaid `%%{init: {'theme':'<theme>'}}%%` directive when a theme is requested
+    // and the source doesn't already declare one — Mermaid only honours the first init block.
+    private static string ApplyTheme(string source, MermaidTheme? theme)
+    {
+        if (theme is null or MermaidTheme.Default)
+        {
+            return source;
+        }
+
+        if (source.AsSpan().TrimStart().StartsWith("%%{init", StringComparison.OrdinalIgnoreCase))
+        {
+            return source;
+        }
+
+        var name = theme.Value.ToString().ToLowerInvariant();
+        return $"%%{{init: {{'theme':'{name}'}}}}%%\n{source}";
     }
 }

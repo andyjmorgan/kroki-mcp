@@ -18,7 +18,7 @@ public class RenderServiceTests
         var service = BuildService(out _, out _);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.RenderMermaidAsync("   ", RenderFormat.Png, CancellationToken.None));
+            service.RenderMermaidAsync("   ", RenderFormat.Png, theme: null, CancellationToken.None));
     }
 
     [Fact]
@@ -27,7 +27,7 @@ public class RenderServiceTests
         var service = BuildService(out _, out _, maxBytes: 10);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.RenderMermaidAsync(new string('x', 50), RenderFormat.Png, CancellationToken.None));
+            service.RenderMermaidAsync(new string('x', 50), RenderFormat.Png, theme: null, CancellationToken.None));
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class RenderServiceTests
         blob.PutAsync(Arg.Any<string>(), rendered, "image/png", TimeSpan.FromDays(30), Arg.Any<CancellationToken>())
             .Returns("https://example/diagrams/key.png");
 
-        var result = await service.RenderMermaidAsync("flowchart LR; A-->B", RenderFormat.Png, CancellationToken.None);
+        var result = await service.RenderMermaidAsync("flowchart LR; A-->B", RenderFormat.Png, theme: null, CancellationToken.None);
 
         Assert.Equal("https://example/diagrams/key.png", result.Url);
         Assert.Equal("png", result.Format);
@@ -63,7 +63,7 @@ public class RenderServiceTests
         blob.PutAsync(Arg.Any<string>(), Arg.Any<byte[]>(), "image/svg+xml", Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns("https://example/diagrams/key.svg");
 
-        var result = await service.RenderMermaidAsync("graph TD; X", RenderFormat.Svg, CancellationToken.None);
+        var result = await service.RenderMermaidAsync("graph TD; X", RenderFormat.Svg, theme: null, CancellationToken.None);
 
         Assert.Equal("svg", result.Format);
         await blob.Received(1).PutAsync(
@@ -74,6 +74,57 @@ public class RenderServiceTests
             Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData(MermaidTheme.Dark, "dark")]
+    [InlineData(MermaidTheme.Forest, "forest")]
+    [InlineData(MermaidTheme.Neutral, "neutral")]
+    [InlineData(MermaidTheme.Base, "base")]
+    public async Task Theme_prepended_when_source_has_no_init_block(MermaidTheme theme, string expectedName)
+    {
+        var service = BuildService(out var kroki, out var blob);
+        string? capturedSource = null;
+        kroki.RenderMermaidAsync(Arg.Do<string>(s => capturedSource = s), RenderFormat.Png, Arg.Any<CancellationToken>())
+            .Returns(new byte[] { 0 });
+        blob.PutAsync(Arg.Any<string>(), Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
+            .Returns("https://example/x.png");
+
+        await service.RenderMermaidAsync("flowchart LR; A-->B", RenderFormat.Png, theme, CancellationToken.None);
+
+        Assert.NotNull(capturedSource);
+        Assert.StartsWith($"%%{{init: {{'theme':'{expectedName}'}}}}%%\n", capturedSource);
+    }
+
+    [Fact]
+    public async Task Theme_default_does_not_modify_source()
+    {
+        var service = BuildService(out var kroki, out var blob);
+        string? capturedSource = null;
+        kroki.RenderMermaidAsync(Arg.Do<string>(s => capturedSource = s), RenderFormat.Png, Arg.Any<CancellationToken>())
+            .Returns(new byte[] { 0 });
+        blob.PutAsync(Arg.Any<string>(), Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
+            .Returns("https://example/x.png");
+
+        await service.RenderMermaidAsync("flowchart LR; A-->B", RenderFormat.Png, MermaidTheme.Default, CancellationToken.None);
+
+        Assert.Equal("flowchart LR; A-->B", capturedSource);
+    }
+
+    [Fact]
+    public async Task Existing_init_block_in_source_is_not_overridden()
+    {
+        var service = BuildService(out var kroki, out var blob);
+        string? capturedSource = null;
+        kroki.RenderMermaidAsync(Arg.Do<string>(s => capturedSource = s), RenderFormat.Png, Arg.Any<CancellationToken>())
+            .Returns(new byte[] { 0 });
+        blob.PutAsync(Arg.Any<string>(), Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
+            .Returns("https://example/x.png");
+
+        var sourceWithOwnInit = "%%{init: {'theme':'forest'}}%%\nflowchart LR; A-->B";
+        await service.RenderMermaidAsync(sourceWithOwnInit, RenderFormat.Png, MermaidTheme.Dark, CancellationToken.None);
+
+        Assert.Equal(sourceWithOwnInit, capturedSource);
+    }
+
     [Fact]
     public async Task Kroki_failure_propagates_and_does_not_call_blob_store()
     {
@@ -82,7 +133,7 @@ public class RenderServiceTests
             .Returns<byte[]>(_ => throw new KrokiRenderException(System.Net.HttpStatusCode.BadRequest, "syntax error"));
 
         await Assert.ThrowsAsync<KrokiRenderException>(() =>
-            service.RenderMermaidAsync("garbage", RenderFormat.Png, CancellationToken.None));
+            service.RenderMermaidAsync("garbage", RenderFormat.Png, theme: null, CancellationToken.None));
 
         await blob.DidNotReceiveWithAnyArgs().PutAsync(default!, default!, default!, default, default);
     }
