@@ -40,7 +40,6 @@ public sealed class SeaweedFsBlobStore : IBlobStore, IDisposable
             Key = key,
             InputStream = stream,
             ContentType = contentType,
-            DisablePayloadSigning = true,
         };
 
         // SeaweedFS native TTL — volume server expires on compaction.
