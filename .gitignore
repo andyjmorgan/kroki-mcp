@@ -64,3 +64,9 @@ publish/
 
 ## Local dotnet install dir used by self-hosted runners
 .dotnet/
+
+## Deploy manifests live outside this repo
+deploy/
+
+## Claude Code session state
+.claude/

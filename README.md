@@ -34,7 +34,6 @@ src/
   Kroki.Mcp.Contracts/  — DTOs and interfaces
   Kroki.Mcp.Core/       — KrokiClient, SeaweedFsBlobStore, RenderService, meters
   Kroki.Mcp.Server/     — Program.cs, MermaidTools, Kestrel + MCP wiring
-deploy/                 — k8s manifests for the attic cluster
 .github/workflows/      — PR build/test + Docker image push (self-hosted runners)
 Dockerfile              — full SDK build (local dev)
 Dockerfile.runtime      — runtime-only, consumes pre-built `publish/` from CI
@@ -62,20 +61,6 @@ dotnet build kroki-mcp.slnx -c Release --no-restore
 `nuget.config` (no underscore) is gitignored; `_nuget.config` is what CI copies into place inside the cluster.
 
 To run against the public Kroki, point at `https://kroki.donkeywork.dev` (already set in `appsettings.Development.json`). For SeaweedFS you'll need a local instance — either `docker run --rm -p 8333:8333 chrislusf/seaweedfs:3.80 server -s3` or skip blob-store testing locally.
-
-## Deployment
-
-Apply manifests in order. They land in the `kroki-mcp` namespace on the attic cluster.
-
-```bash
-kubectl apply -f deploy/00-namespace.yaml
-kubectl apply -f deploy/10-secrets.example.yaml   # edit first — replace REPLACE_ME values
-kubectl apply -f deploy/20-redis.yaml
-kubectl apply -f deploy/30-seaweedfs.yaml
-kubectl apply -f deploy/40-kroki-mcp.yaml
-```
-
-Then add the two cloudflared routes per `deploy/cloudflared-routes.md`.
 
 ## CI
 
