@@ -19,10 +19,11 @@ public sealed class MermaidTools
     public async Task<RenderResult> RenderMermaidAsync(
         [Description("Mermaid diagram source (e.g. 'flowchart LR; A-->B').")] string source,
         [Description("Output format: 'png' (default, raster, embeds anywhere) or 'svg' (vector, sharp at any scale).")] string? format = null,
+        [Description("Mermaid theme to apply. Skipped when the source already declares its own %%{init: ...}%% block.")] MermaidTheme? theme = null,
         CancellationToken ct = default)
     {
         var renderFormat = ParseFormat(format);
-        return await _renderService.RenderMermaidAsync(source, renderFormat, ct).ConfigureAwait(false);
+        return await _renderService.RenderMermaidAsync(source, renderFormat, theme, ct).ConfigureAwait(false);
     }
 
     private static RenderFormat ParseFormat(string? format)

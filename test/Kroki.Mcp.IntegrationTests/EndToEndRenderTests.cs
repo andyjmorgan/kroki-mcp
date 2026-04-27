@@ -76,6 +76,43 @@ public class EndToEndRenderTests : IClassFixture<KrokiMcpStackFixture>, IAsyncLi
     }
 
     [Fact]
+    public async Task Tool_schema_advertises_theme_enum_values()
+    {
+        var tools = await _client!.ListToolsAsync().ConfigureAwait(false);
+        var tool = tools.Single(t => t.Name == "mermaid_render");
+
+        var properties = tool.JsonSchema.GetProperty("properties");
+        Assert.True(properties.TryGetProperty("theme", out var themeProperty), "Tool schema is missing the 'theme' parameter");
+
+        var enumElement = ResolveEnum(themeProperty);
+        var values = enumElement.EnumerateArray().Select(e => e.GetString()).ToArray();
+
+        Assert.Equal(new[] { "default", "dark", "forest", "neutral", "base" }, values);
+    }
+
+    private static JsonElement ResolveEnum(JsonElement themeProperty)
+    {
+        if (themeProperty.TryGetProperty("enum", out var direct))
+        {
+            return direct;
+        }
+
+        // Nullable enums often appear as anyOf: [{enum: [...]}, {type: "null"}]
+        if (themeProperty.TryGetProperty("anyOf", out var anyOf))
+        {
+            foreach (var branch in anyOf.EnumerateArray())
+            {
+                if (branch.TryGetProperty("enum", out var branchEnum))
+                {
+                    return branchEnum;
+                }
+            }
+        }
+
+        throw new Xunit.Sdk.XunitException($"Theme schema did not expose enum values; saw {themeProperty.GetRawText()}");
+    }
+
+    [Fact]
     public async Task Invalid_mermaid_source_surfaces_an_error_result()
     {
         var result = await _client!.CallToolAsync(
