@@ -31,10 +31,10 @@ jobs:
         run: cp _nuget.config nuget.config
 
       - name: Restore
-        run: dotnet restore kroki-mcp.sln
+        run: dotnet restore kroki-mcp.slnx
 
       - name: Build
-        run: dotnet build kroki-mcp.sln -c Release --no-restore
+        run: dotnet build kroki-mcp.slnx -c Release --no-restore
 
       - name: Test
-        run: dotnet test kroki-mcp.sln -c Release --no-build --verbosity normal
+        run: dotnet test kroki-mcp.slnx -c Release --no-build --verbosity normal
