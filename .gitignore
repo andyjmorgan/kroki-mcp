@@ -55,3 +55,12 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+## Working copy of nuget.config (local override of _nuget.config)
+nuget.config
+
+## CI publish output
+publish/
+
+## Local dotnet install dir used by self-hosted runners
+.dotnet/

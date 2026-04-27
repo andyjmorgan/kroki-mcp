@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Kroki.Mcp.Contracts/Kroki.Mcp.Contracts.csproj" />
+    <Project Path="src/Kroki.Mcp.Core/Kroki.Mcp.Core.csproj" />
+    <Project Path="src/Kroki.Mcp.Server/Kroki.Mcp.Server.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/Kroki.Mcp.Tests/Kroki.Mcp.Tests.csproj" />
+  </Folder>
+</Solution>

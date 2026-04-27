@@ -1,0 +1,40 @@
+name: PR Build & Test
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build & Test
+    runs-on: [self-hosted, Linux, X64, k8s]
+    env:
+      DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Configure NuGet for local proxy
+        run: cp _nuget.config nuget.config
+
+      - name: Restore
+        run: dotnet restore kroki-mcp.slnx
+
+      - name: Build
+        run: dotnet build kroki-mcp.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test kroki-mcp.slnx -c Release --no-build --verbosity normal

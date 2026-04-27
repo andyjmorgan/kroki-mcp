@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <PackageReference Include="ModelContextProtocol" Version="1.2.0" />
+        <PackageReference Include="AWSSDK.S3" Version="3.7.406" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.5" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Kroki.Mcp.Contracts\Kroki.Mcp.Contracts.csproj" />
+    </ItemGroup>
+</Project>

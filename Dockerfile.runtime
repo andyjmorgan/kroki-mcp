@@ -1,0 +1,12 @@
+# Runtime-only Dockerfile - uses pre-built artifacts from CI.
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+
+WORKDIR /app
+EXPOSE 8080
+
+ENV DOTNET_ROLL_FORWARD=LatestMajor \
+    ASPNETCORE_URLS=http://+:8080
+
+COPY publish/ .
+
+ENTRYPOINT ["dotnet", "Kroki.Mcp.Server.dll"]
