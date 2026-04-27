@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kroki-mcp-config
+  namespace: kroki-mcp
+data:
+  Kroki__DispatcherUrl: "http://kroki-dispatcher.kroki.svc.cluster.local:8000"
+  Kroki__Timeout: "00:00:30"
+  Kroki__MaxSourceBytes: "262144"
+  BlobStore__Endpoint: "http://seaweedfs.kroki-mcp.svc.cluster.local:8333"
+  BlobStore__Bucket: "diagrams"
+  BlobStore__PublicBaseUrl: "https://kroki-cdn.donkeywork.dev"
+  BlobStore__RetentionDays: "30"
+  # OTLP exporter target — observability-v2 lives on the office cluster; attic
+  # pods reach it via the cross-cluster NodePort on the office node.
+  # gRPC 4317 → 30327, HTTP 4318 → 30328. No auth (collector is tls.insecure).
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://192.168.69.27:30327"
+  OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+  # service.name is set in code; cluster/k8s.* attrs are stamped by the
+  # attic edge DaemonSet — don't duplicate them here.
+  OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=production"
+  ASPNETCORE_ENVIRONMENT: "Production"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kroki-mcp
+  namespace: kroki-mcp
+  labels:
+    app: kroki-mcp
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+  selector:
+    app: kroki-mcp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kroki-mcp
+  namespace: kroki-mcp
+  labels:
+    app: kroki-mcp
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: kroki-mcp
+  template:
+    metadata:
+      labels:
+        app: kroki-mcp
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10000
+        runAsGroup: 10000
+        fsGroup: 10000
+      containers:
+        - name: kroki-mcp
+          image: ghcr.io/andyjmorgan/donkeywork/kroki-mcp:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: kroki-mcp-config
+            - secretRef:
+                name: kroki-mcp-secrets
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: kroki-mcp

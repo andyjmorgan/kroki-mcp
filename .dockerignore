@@ -1,0 +1,13 @@
+**/bin
+**/obj
+**/.vs
+**/.idea
+**/.vscode
+**/*.user
+**/Properties/launchSettings.json
+.git
+.github
+deploy
+test-output
+publish
+nuget.config
