@@ -1,22 +1,22 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Kroki.Mcp.Contracts;
 
-[JsonConverter(typeof(MermaidThemeJsonConverter))]
+[JsonConverter(typeof(JsonStringEnumConverter<MermaidTheme>))]
 public enum MermaidTheme
 {
+    [JsonStringEnumMemberName("default")]
     Default,
-    Dark,
-    Forest,
-    Neutral,
-    Base,
-}
 
-public sealed class MermaidThemeJsonConverter : JsonStringEnumConverter<MermaidTheme>
-{
-    public MermaidThemeJsonConverter()
-        : base(JsonNamingPolicy.CamelCase)
-    {
-    }
+    [JsonStringEnumMemberName("dark")]
+    Dark,
+
+    [JsonStringEnumMemberName("forest")]
+    Forest,
+
+    [JsonStringEnumMemberName("neutral")]
+    Neutral,
+
+    [JsonStringEnumMemberName("base")]
+    Base,
 }
