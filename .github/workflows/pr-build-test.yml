@@ -37,4 +37,4 @@ jobs:
         run: dotnet build kroki-mcp.slnx -c Release --no-restore
 
       - name: Test
-        run: dotnet test kroki-mcp.slnx -c Release --no-build --verbosity normal
+        run: dotnet test kroki-mcp.slnx -c Release --no-build --verbosity normal --filter "Category!=Integration"

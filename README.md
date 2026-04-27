@@ -62,6 +62,18 @@ dotnet build kroki-mcp.slnx -c Release --no-restore
 
 To run against the public Kroki, point at `https://kroki.donkeywork.dev` (already set in `appsettings.Development.json`). For SeaweedFS you'll need a local instance — either `docker run --rm -p 8333:8333 chrislusf/seaweedfs:3.80 server -s3` or skip blob-store testing locally.
 
+### Tests
+
+```bash
+# unit tests only (default in CI; no Docker needed)
+dotnet test kroki-mcp.slnx -c Release --filter "Category!=Integration"
+
+# full E2E (requires Docker — pulls Kroki, mermaid, SeaweedFS, Redis containers)
+dotnet test test/Kroki.Mcp.IntegrationTests/Kroki.Mcp.IntegrationTests.csproj -c Release
+```
+
+Integration tests are skipped in CI because the ARC self-hosted runner pod can't reach the Testcontainers Docker socket cleanly. Run them locally before pushing changes that touch the render pipeline.
+
 ## CI
 
 GitHub Actions runs on the self-hosted ARC runners (`runs-on: [self-hosted, Linux, X64]`) so they can resolve `nexus.nexus.svc.cluster.local`. Two workflows:
