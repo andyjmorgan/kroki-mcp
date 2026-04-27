@@ -5,6 +5,7 @@
     <Project Path="src/Kroki.Mcp.Server/Kroki.Mcp.Server.csproj" />
   </Folder>
   <Folder Name="/test/">
+    <Project Path="test/Kroki.Mcp.IntegrationTests/Kroki.Mcp.IntegrationTests.csproj" />
     <Project Path="test/Kroki.Mcp.Tests/Kroki.Mcp.Tests.csproj" />
   </Folder>
 </Solution>

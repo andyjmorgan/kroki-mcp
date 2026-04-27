@@ -15,4 +15,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Kroki.Mcp.Core\Kroki.Mcp.Core.csproj" />
     </ItemGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="Kroki.Mcp.IntegrationTests" />
+    </ItemGroup>
 </Project>
